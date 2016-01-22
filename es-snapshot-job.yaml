@@ -1,0 +1,37 @@
+---
+apiVersion: extensions/v1beta1
+kind: Job
+
+metadata:
+  name: es-snapshot
+  labels:
+    component: elasticsearch
+    role: snapshot
+
+spec:
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: snapshot
+
+  template:
+    metadata:
+      name: es-snapshot
+      labels:
+        component: elasticsearch
+        role: snapshot
+
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: es-snapshot-repository
+        image: appropriate/curl
+
+        # TODO: put in docker image of its own
+        command: ["sh", "-c", "curl -X PUT http://$ELASTICSEARCH_SERVICE_HOST:$ELASTICSEARCH_SERVICE_PORT/_snapshot/backups -d '{\"type\": \"s3\", \"settings\": { \"bucket\": \"<PUT YOUR BUCKET HERE>\" } }'"]
+
+      - name: es-snapshot-make
+        image: appropriate/curl
+
+        # TODO: put in docker image of its own
+        command: ["sh", "-c", "curl -X POST http://$ELASTICSEARCH_SERVICE_HOST:$ELASTICSEARCH_SERVICE_PORT/_snapshot/backups/snapshot_$(date +%Y%m%d-%H%M%S-%s)?wait_for_completion=true"]
